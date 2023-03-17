@@ -1,0 +1,33 @@
+body {
+    margin: 0;
+}
+
+.mainContainer {
+    display: grid;
+    height: 100vh;
+    grid-template-columns: 15vw 70vw 15vw;
+    grid-template-rows: 50px auto;
+    grid-template-areas: 
+    "top top top"
+    "left canvas right";
+}
+
+.topNav {
+    grid-area: top;
+    background-color: aqua;
+}
+
+.leftNav {
+    grid-area: left;
+    background-color: aquamarine;
+}
+
+.rightNav {
+    grid-area: right;
+    background-color: blanchedalmond;
+}
+
+.canvas {
+    grid-area: canvas;
+    background-color: greenyellow;
+}
