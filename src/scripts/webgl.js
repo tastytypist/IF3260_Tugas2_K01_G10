@@ -1,3 +1,5 @@
+import * as helper from "./helper.js"
+
 var gl;
 
 function defineWebGL(canvas) {
@@ -26,18 +28,21 @@ function createBuffer(vertices, indices, colors) {
     gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
 
-    createShader(vertex_buffer, index_buffer, color_buffer);
+    createShader(vertex_buffer, index_buffer, color_buffer, indices);
 }
 
-function createShader(vertex_buffer, index_buffer, color_buffer) {
+function createShader(vertex_buffer, index_buffer, color_buffer, indices) {
     /* Step3: Create and compile Shader programs */
     // Vertex shader source code
     var vertCode =
-    `attribute vec3 coordinates;
+    `attribute vec3 position;
+    uniform mat4 Pmatrix;
+    uniform mat4 Vmatrix;
+    uniform mat4 Mmatrix;
     attribute vec3 color;
     varying vec3 vColor;
     void main(void) {
-        gl_Position = vec4(coordinates, 1.0);
+        gl_Position = Pmatrix * Vmatrix * Mmatrix * vec4(position, 1.0);
         vColor = color;
     }`;
 
@@ -66,54 +71,91 @@ function createShader(vertex_buffer, index_buffer, color_buffer) {
     gl.attachShader(shaderProgram, vertShader); 
     gl.attachShader(shaderProgram, fragShader);
 
-    // Link both programs and use
+    // Link both programs
     gl.linkProgram(shaderProgram);
+    
+    /* Step 4: Associate the shader programs to buffer objects */
+    
+    var Pmatrix = gl.getUniformLocation(shaderProgram, "Pmatrix");
+    var Vmatrix = gl.getUniformLocation(shaderProgram, "Vmatrix");
+    var Mmatrix = gl.getUniformLocation(shaderProgram, "Mmatrix");
+    
+    // Position
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+    var position = gl.getAttribLocation(shaderProgram, "position");
+    gl.vertexAttribPointer(position, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(position);
+    
+    // Color
+    gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+    var color = gl.getAttribLocation(shaderProgram, "color");
+    gl.vertexAttribPointer(color, 3, gl.FLOAT, false, 0, 0) ;
+    gl.enableVertexAttribArray(color);
+
+    // Index
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+
+    // Use Program
     gl.useProgram(shaderProgram);
 
-    /* Step 4: Associate the shader programs to buffer objects */
+    /** Matrix */
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-    
-    //Get the attribute location
-    var coord = gl.getAttribLocation(shaderProgram, "coordinates");
-    
-    //point an attribute to the currently bound VBO
-    gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
-    
-    //Enable the attribute
-    gl.enableVertexAttribArray(coord);
-    
-    gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+    var proj_matrix = helper.getProjection(40, canvas.width/canvas.height, 1, 100);
 
-    // get the attribute location
-    var color = gl.getAttribLocation(shaderProgram, "color");
+    var mov_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+    var view_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+    
+    view_matrix[14] = view_matrix[14]-6;
 
-    // point attribute to the volor buffer object
-    gl.vertexAttribPointer(color, 3, gl.FLOAT, false, 0, 0) ;
+    /** Drawing */
 
-    // enable the color attribute
-    gl.enableVertexAttribArray(color);
+    var time_old = 0;
+    resizeCanvasToDisplaySize(gl.canvas);
+         var animate = function(time) {
+
+            var dt = time-time_old;
+            helper.rotateZ(mov_matrix, dt*0.005);//time
+            helper.rotateY(mov_matrix, dt*0.002);
+            helper.rotateX(mov_matrix, dt*0.003);
+            time_old = time;
+
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+            gl.clearColor(0.5, 0.5, 0.5, 0.9);
+            gl.clearDepth(1.0);
+
+            gl.viewport(0.0, 0.0, canvas.width, canvas.height);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.uniformMatrix4fv(Pmatrix, false, proj_matrix);
+            gl.uniformMatrix4fv(Vmatrix, false, view_matrix);
+            gl.uniformMatrix4fv(Mmatrix, false, mov_matrix);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+            gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+
+            window.requestAnimationFrame(animate);
+         }
+         animate(0);
 }
 
 function render(indices) {
-    // Resize canvas
-    resizeCanvasToDisplaySize(gl.canvas);
     
-    // Clear the canvas
-    gl.clearColor(1, 1, 1, 0);
-   
-    // Enable the depth test
-    gl.enable(gl.DEPTH_TEST); 
+    // // Resize canvas
+    // resizeCanvasToDisplaySize(gl.canvas);
     
-    // Clear the color buffer bit
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    // // Clear the canvas
+    // gl.clearColor(1, 1, 1, 0);
    
-    // Set the view port
-    gl.viewport(0,0,canvas.width,canvas.height);
+    // // Enable the depth test
+    // gl.enable(gl.DEPTH_TEST); 
+    
+    // // Clear the color buffer bit
+    // gl.clear(gl.COLOR_BUFFER_BIT);
    
-    // Draw the triangle
-    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT,0);
+    // // Set the view port
+    // gl.viewport(0,0,canvas.width,canvas.height);
+   
+    // // Draw the triangle
+    // gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT,0);
 }
 
 function resizeCanvasToDisplaySize(canvas) {
