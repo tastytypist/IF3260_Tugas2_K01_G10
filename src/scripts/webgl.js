@@ -4,8 +4,13 @@ var gl;
 
 function defineWebGL(canvas) {
     gl = canvas.getContext('webgl');
-
     return gl;
+}
+
+function renderObjects(listOfObjects) {
+    listOfObjects.forEach((object) => {
+        createBuffer(object.vertices, object.indices, object.colors);
+    })
 }
 
 function createBuffer(vertices, indices, colors) {
@@ -92,9 +97,6 @@ function createShader(vertex_buffer, index_buffer, color_buffer, indices) {
     gl.vertexAttribPointer(color, 3, gl.FLOAT, false, 0, 0) ;
     gl.enableVertexAttribArray(color);
 
-    // Index
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-
     // Use Program
     gl.useProgram(shaderProgram);
 
@@ -108,33 +110,50 @@ function createShader(vertex_buffer, index_buffer, color_buffer, indices) {
     view_matrix[14] = view_matrix[14]-6;
 
     /** Drawing */
+    helper.rotateX(mov_matrix, 0.5);
+    helper.rotateY(mov_matrix, 0.5);
+    helper.rotateZ(mov_matrix, 0.5);
 
-    var time_old = 0;
     resizeCanvasToDisplaySize(gl.canvas);
-         var animate = function(time) {
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+    gl.clearColor(0.5, 0.5, 0.5, 0.9);
+    gl.clearDepth(1.0);
 
-            var dt = time-time_old;
-            helper.rotateZ(mov_matrix, dt*0.005);//time
-            helper.rotateY(mov_matrix, dt*0.002);
-            helper.rotateX(mov_matrix, dt*0.003);
-            time_old = time;
+    gl.viewport(0.0, 0.0, canvas.width, canvas.height);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.uniformMatrix4fv(Pmatrix, false, proj_matrix);
+    gl.uniformMatrix4fv(Vmatrix, false, view_matrix);
+    gl.uniformMatrix4fv(Mmatrix, false, mov_matrix);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
-            gl.enable(gl.DEPTH_TEST);
-            gl.depthFunc(gl.LEQUAL);
-            gl.clearColor(0.5, 0.5, 0.5, 0.9);
-            gl.clearDepth(1.0);
+    /** Animation */
+    // var time_old = 0;
+    // resizeCanvasToDisplaySize(gl.canvas);
+    // var animate = function(time) {
+    //     var dt = time-time_old;
+    //     helper.rotateZ(mov_matrix, dt*0.00005);
+    //     helper.rotateY(mov_matrix, dt*0.00002);
+    //     helper.rotateX(mov_matrix, dt*0.00003);
+    //     time_old = time;
 
-            gl.viewport(0.0, 0.0, canvas.width, canvas.height);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            gl.uniformMatrix4fv(Pmatrix, false, proj_matrix);
-            gl.uniformMatrix4fv(Vmatrix, false, view_matrix);
-            gl.uniformMatrix4fv(Mmatrix, false, mov_matrix);
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-            gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+    //     gl.enable(gl.DEPTH_TEST);
+    //     gl.depthFunc(gl.LEQUAL);
+    //     gl.clearColor(0.5, 0.5, 0.5, 0.9);
+    //     gl.clearDepth(1.0);
 
-            window.requestAnimationFrame(animate);
-         }
-         animate(0);
+    //     gl.viewport(0.0, 0.0, canvas.width, canvas.height);
+    //     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    //     gl.uniformMatrix4fv(Pmatrix, false, proj_matrix);
+    //     gl.uniformMatrix4fv(Vmatrix, false, view_matrix);
+    //     gl.uniformMatrix4fv(Mmatrix, false, mov_matrix);
+    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+    //     gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+
+    //     window.requestAnimationFrame(animate);
+    // }
+    // animate(0);
 }
 
 function render(indices) {
@@ -176,4 +195,4 @@ function resizeCanvasToDisplaySize(canvas) {
     return needResize;
   }
 
-export { defineWebGL, createBuffer, createShader, render };
+export { defineWebGL, createBuffer, createShader, renderObjects, render };

@@ -1,5 +1,6 @@
 import * as webgl from "./webgl.js";
 import * as utils from "./utils.js";
+import Object from "../models/Object.js";
 
 
 function main() {
@@ -35,8 +36,11 @@ function main() {
     8,9,10, 8,10,11, 12,13,14, 12,14,15,
     16,17,18, 16,18,19, 20,21,22, 20,22,23 
     ];
-  
-   webgl.createBuffer(vertices, indices, colors);
+
+    var cubeA = new Object("Cube", vertices, colors, indices)
+
+    var listOfObjects = [cubeA]
+    webgl.renderObjects(listOfObjects);
 }
 
 main();
