@@ -6,7 +6,7 @@ function defineWebGL(canvas) {
     return gl;
 }
 
-function createBuffer(vertices, indices) {
+function createBuffer(vertices, indices, colors) {
     /* Step2: Define the geometry and store it in buffer objects */
 
     // Create vertex buffer
@@ -14,23 +14,31 @@ function createBuffer(vertices, indices) {
     gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-
+    
     // Create index buffer
     var index_buffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
+
+    // Create an empty buffer object and store color data
+    var color_buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+    createShader(vertex_buffer, index_buffer, color_buffer);
 }
 
-function createShader(color) {
+function createShader(vertex_buffer, index_buffer, color_buffer) {
     /* Step3: Create and compile Shader programs */
     // Vertex shader source code
     var vertCode =
     `attribute vec3 coordinates;
+    attribute vec3 color;
+    varying vec3 vColor;
     void main(void) {
         gl_Position = vec4(coordinates, 1.0);
+        vColor = color;
     }`;
 
     //Create, attach, compile a vertex shader object
@@ -40,8 +48,10 @@ function createShader(color) {
 
     //Fragment shader source code
     var fragCode = 
-    `void main(void) { 
-        gl_FragColor = vec4(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]});
+    `precision mediump float;
+    varying vec3 vColor;
+    void main(void) { 
+        gl_FragColor = vec4(vColor, 1.);
     }`;
 
     // Create, attach, compile fragment shader object
@@ -59,17 +69,31 @@ function createShader(color) {
     // Link both programs and use
     gl.linkProgram(shaderProgram);
     gl.useProgram(shaderProgram);
-    
+
     /* Step 4: Associate the shader programs to buffer objects */
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
     
     //Get the attribute location
     var coord = gl.getAttribLocation(shaderProgram, "coordinates");
-
+    
     //point an attribute to the currently bound VBO
     gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
-
+    
     //Enable the attribute
     gl.enableVertexAttribArray(coord);
+    
+    gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+
+    // get the attribute location
+    var color = gl.getAttribLocation(shaderProgram, "color");
+
+    // point attribute to the volor buffer object
+    gl.vertexAttribPointer(color, 3, gl.FLOAT, false, 0, 0) ;
+
+    // enable the color attribute
+    gl.enableVertexAttribArray(color);
 }
 
 function render(indices) {
