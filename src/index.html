@@ -10,14 +10,21 @@
 <body>
     <div class="mainContainer">
         <div class="topNav">
-            <form>
-                <label for="file-input">Select a file:</label>
-                <input type="file" id="file-input" name="myFile">
+            <form id="upload">
+                <label for="fileInput">Select a file:</label>
+                <input type="file" id="fileInput" name="myFile">
                 <input type="submit">
-              </form>
+            </form>
         </div>
-        <div class="leftNav"></div>
-        <div class="rightNav"></div>
+        <div class="leftNav">
+            <ul id="listObject">
+            </ul>
+        </div>
+        <div class="rightNav">
+            <form id="save">
+                <button type="submit">Save</button>
+            </form>
+        </div>
         <div class="canvasContainer">
             <canvas id="canvas"></canvas>
         </div>
