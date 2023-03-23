@@ -50,4 +50,22 @@ function getProjection(angle, a, zMin, zMax) {
     m[10] = c*m[10]-s*mv8;
   }
 
-export { getProjection, rotateX, rotateY, rotateZ }
+  function resizeCanvasToDisplaySize(canvas) {
+    // Lookup the size the browser is displaying the canvas in CSS pixels.
+    const displayWidth  = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    // Check if the canvas is not the same size.
+    const needResize = canvas.width  !== displayWidth ||
+                       canvas.height !== displayHeight;
+
+    if (needResize) {
+      // Make the canvas the same size
+      canvas.width  = displayWidth;
+      canvas.height = displayHeight;
+    }
+
+    return needResize;
+  }
+
+export { getProjection, rotateX, rotateY, rotateZ, resizeCanvasToDisplaySize }
