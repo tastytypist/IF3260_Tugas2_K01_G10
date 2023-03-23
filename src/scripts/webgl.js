@@ -2,6 +2,35 @@ import * as helper from "./helper.js"
 
 var gl;
 
+// data
+var global_vertices = [];
+var global_indices = [];
+var global_colors = [];
+var global_translation = [];
+
+// buffer
+var vertex_buffer;
+var index_buffer;
+var color_buffer;
+
+// Matrix
+var Pmatrix;
+var Vmatrix;
+var Mmatrix;
+
+// 
+var drawnObjects = [];
+
+function setOffset() {
+    let offset = 0;
+    console.log("Calculating offset of " + drawnObjects.length + " objects.");
+    drawnObjects.forEach((object) => {
+        offset += object.vertices.length;
+    })
+    console.log("Calculated offset", offset);
+    return offset;
+}
+
 function defineWebGL(canvas) {
     gl = canvas.getContext('webgl');
     return gl;
@@ -9,45 +38,68 @@ function defineWebGL(canvas) {
 
 function renderObjects(listOfObjects) {
     listOfObjects.forEach((object) => {
-        createBuffer(object.vertices, object.indices, object.colors);
+        createBuffer(object.vertices, object.indices, object.colors, object.translation);
+        createShader();
+        render(object.indices);
+        drawnObjects.push(object);
     })
 }
 
-function createBuffer(vertices, indices, colors) {
+function createBuffer(vertices, indices, colors, translation) {
     /* Step2: Define the geometry and store it in buffer objects */
 
     // Create vertex buffer
-    var vertex_buffer = gl.createBuffer();
+    if (!vertex_buffer) {
+        vertex_buffer = gl.createBuffer();
+    }
+    global_vertices = [...global_vertices, ...vertices];
     gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(global_vertices), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     
     // Create index buffer
-    var index_buffer = gl.createBuffer();
+    if (!index_buffer) {
+        index_buffer = gl.createBuffer();
+    }
+
+    let offset = setOffset() / 3;
+    indices.forEach((i) => {
+        global_indices.push(i+offset)
+    });
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(global_indices), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
     // Create an empty buffer object and store color data
-    var color_buffer = gl.createBuffer();
+    if (!color_buffer) {
+        color_buffer = gl.createBuffer();
+    }
+    global_colors = [...global_colors, ...colors];
     gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(global_colors), gl.STATIC_DRAW);
 
-    createShader(vertex_buffer, index_buffer, color_buffer, indices);
+    global_translation = translation;
+
+    console.log(global_vertices);
+    console.log(global_indices);
+    console.log(global_colors);
 }
 
-function createShader(vertex_buffer, index_buffer, color_buffer, indices) {
+function createShader() {
     /* Step3: Create and compile Shader programs */
     // Vertex shader source code
     var vertCode =
     `attribute vec3 position;
+    uniform vec4 translation;
+
     uniform mat4 Pmatrix;
     uniform mat4 Vmatrix;
     uniform mat4 Mmatrix;
+
     attribute vec3 color;
     varying vec3 vColor;
     void main(void) {
-        gl_Position = Pmatrix * Vmatrix * Mmatrix * vec4(position, 1.0);
+        gl_Position = Pmatrix * Vmatrix * Mmatrix * vec4(position, 1.0) + translation;
         vColor = color;
     }`;
 
@@ -81,9 +133,9 @@ function createShader(vertex_buffer, index_buffer, color_buffer, indices) {
     
     /* Step 4: Associate the shader programs to buffer objects */
     
-    var Pmatrix = gl.getUniformLocation(shaderProgram, "Pmatrix");
-    var Vmatrix = gl.getUniformLocation(shaderProgram, "Vmatrix");
-    var Mmatrix = gl.getUniformLocation(shaderProgram, "Mmatrix");
+    Pmatrix = gl.getUniformLocation(shaderProgram, "Pmatrix");
+    Vmatrix = gl.getUniformLocation(shaderProgram, "Vmatrix");
+    Mmatrix = gl.getUniformLocation(shaderProgram, "Mmatrix");
     
     // Position
     gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
@@ -96,12 +148,20 @@ function createShader(vertex_buffer, index_buffer, color_buffer, indices) {
     var color = gl.getAttribLocation(shaderProgram, "color");
     gl.vertexAttribPointer(color, 3, gl.FLOAT, false, 0, 0) ;
     gl.enableVertexAttribArray(color);
-
+    
     // Use Program
     gl.useProgram(shaderProgram);
 
-    /** Matrix */
+    /** Translation */
+    let [Tx, Ty, Tz] = global_translation
+    var translation = gl.getUniformLocation(shaderProgram, "translation")
+    gl.uniform4f(translation, Tx, Ty, Tz, 1.0);
+}
 
+function render(indices) {
+    var offset = setOffset();
+
+    /** Matrix */
     var proj_matrix = helper.getProjection(40, canvas.width/canvas.height, 1, 100);
 
     var mov_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
@@ -114,7 +174,7 @@ function createShader(vertex_buffer, index_buffer, color_buffer, indices) {
     helper.rotateY(mov_matrix, 0.5);
     helper.rotateZ(mov_matrix, 0.5);
 
-    resizeCanvasToDisplaySize(gl.canvas);
+    helper.resizeCanvasToDisplaySize(gl.canvas);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
     gl.clearColor(0.5, 0.5, 0.5, 0.9);
@@ -126,11 +186,11 @@ function createShader(vertex_buffer, index_buffer, color_buffer, indices) {
     gl.uniformMatrix4fv(Vmatrix, false, view_matrix);
     gl.uniformMatrix4fv(Mmatrix, false, mov_matrix);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, offset);
 
     /** Animation */
     // var time_old = 0;
-    // resizeCanvasToDisplaySize(gl.canvas);
+    // helper.resizeCanvasToDisplaySize(gl.canvas);
     // var animate = function(time) {
     //     var dt = time-time_old;
     //     helper.rotateZ(mov_matrix, dt*0.00005);
@@ -156,43 +216,4 @@ function createShader(vertex_buffer, index_buffer, color_buffer, indices) {
     // animate(0);
 }
 
-function render(indices) {
-    
-    // // Resize canvas
-    // resizeCanvasToDisplaySize(gl.canvas);
-    
-    // // Clear the canvas
-    // gl.clearColor(1, 1, 1, 0);
-   
-    // // Enable the depth test
-    // gl.enable(gl.DEPTH_TEST); 
-    
-    // // Clear the color buffer bit
-    // gl.clear(gl.COLOR_BUFFER_BIT);
-   
-    // // Set the view port
-    // gl.viewport(0,0,canvas.width,canvas.height);
-   
-    // // Draw the triangle
-    // gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT,0);
-}
-
-function resizeCanvasToDisplaySize(canvas) {
-    // Lookup the size the browser is displaying the canvas in CSS pixels.
-    const displayWidth  = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
-
-    // Check if the canvas is not the same size.
-    const needResize = canvas.width  !== displayWidth ||
-                       canvas.height !== displayHeight;
-
-    if (needResize) {
-      // Make the canvas the same size
-      canvas.width  = displayWidth;
-      canvas.height = displayHeight;
-    }
-
-    return needResize;
-  }
-
-export { defineWebGL, createBuffer, createShader, renderObjects, render };
+export { defineWebGL, renderObjects };

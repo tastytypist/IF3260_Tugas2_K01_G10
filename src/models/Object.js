@@ -1,9 +1,10 @@
 class Object {
-    constructor(name, vertices, colors, indices) {
+    constructor(name, vertices, colors, indices, translation = [0,0,0]) {
         this.name = name;
         this.vertices = vertices;
         this.colors = colors;
         this.indices = indices;
+        this.translation = translation;
     }
 
     setVertices(vertices) {
@@ -18,20 +19,8 @@ class Object {
         this.indices = indices;
     }
 
-    getVertices() {
-        return this.vertices;
-    }
+    save() {
 
-    getColors() {
-        return this.colors;
-    }
-
-    getIndices() {
-        return this.indices;
-    }
-
-    getAll() {
-        return this.vertices, this.indices, this.colors;
     }
 }
 
