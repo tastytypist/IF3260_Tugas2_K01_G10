@@ -2,15 +2,14 @@ import * as webgl from "./webgl.js";
 import * as utils from "./utils.js";
 import Object from "../models/Object.js";
 
-var position;
-var indices;
-var color;
-var count;
-var translation = [0, 0, -500];
-var rotation = [0, 0, 0];
-var scale = [1, 1, 1];
-var cameraAngle = 0;
-var cameraRadius = 100;
+let position;
+let colour;
+let count;
+let translation = [0, 0, -500];
+let rotation = [0, 0, 0];
+let scale = [1, 1, 1];
+let cameraAngle = 0;
+let cameraRadius = 100;
 
 function main() {
     /* Step1: Prepare the canvas and get webgl context */
@@ -22,14 +21,30 @@ function main() {
         return;
     }
 
-    var upload = document.getElementById("upload");
-    upload.addEventListener('submit', (event) => {
-        var inputFile = document.getElementById('input-file');
-        console.log(inputFile.files[0]);
-    })
+    let upload = document.getElementById("upload");
+    upload.addEventListener('submit', function() {
+        let file = document.getElementById('input-file');
+        if (file.files.length === 0) {
+            alert('Tidak ada file yang dipilih!')
+        } else {
+            const reader = new FileReader();
+            let data;
+
+            reader.readAsText(file.files[0]);
+            reader.onerror = () => {console.log("Load error")};
+            reader.onload  = (event) => {
+                data = JSON.parse(event.target.result);
+                position = data.vertices;
+                count = data.vertices.length
+                colour = data.colour
+                let object = new Object("object", position, count, colour);
+                webgl.renderObject(object);
+            }
+        }
+    });
 
 
-   var position = 
+   position = 
    [
    // left column front
    0,   0,  0,
@@ -159,7 +174,7 @@ function main() {
   0, 150,  30,
   0, 150,   0];
 
-  var color = 
+  colour = 
   [
     // left column front
   200,  70, 120,
@@ -289,14 +304,14 @@ function main() {
   160, 160, 220,
   160, 160, 220];
 
-    var count = 16 * 6; // Jumlah position/vertex
-    var translation = [0, 0, -500];
-    var rotation = [0, 0, 0];
-    var scale = [1, 1, 1];
-    var cameraAngle = 0;
-    var cameraRadius = 100;
+    count = 16 * 6; // Jumlah position/vertex
+    translation = [0, 0, -500];
+    rotation = [0, 0, 0];
+    scale = [1, 1, 1];
+    cameraAngle = 0;
+    cameraRadius = 100;
 
-    var F = new Object("F", position, count, color, translation, rotation, scale, cameraAngle, cameraRadius);
+    let F = new Object("F", position, count, color, translation, rotation, scale, cameraAngle, cameraRadius);
 
     webgl.renderObject(F);
 
