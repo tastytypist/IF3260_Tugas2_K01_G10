@@ -21,47 +21,171 @@ function main() {
         return;
     }
 
-   var vertices = [
-    0,0,0, 0.4,0,0, 0.4, 0.4,0, 0, 0.4,0,
-    0,0, 0.4, 0.4,0, 0.4, 0.4, 0.4, 0.4, 0, 0.4, 0.4,
-    0,0,0, 0, 0.4,0, 0, 0.4, 0.4, 0,0, 0.4,
-    0.4,0,0, 0.4, 0.4,0, 0.4, 0.4, 0.4, 0.4,0, 0.4,
-    0,0,0, 0,0, 0.4, 0.4,0, 0.4, 0.4,0,0,
-    0, 0.4,0, 0, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,0, 
-    ];
+   var position = 
+   [
+   // left column front
+   0,   0,  0,
+   30,   0,  0,
+    0, 150,  0,
+    0, 150,  0,
+   30,   0,  0,
+   30, 150,  0,
 
-    var colors = [
-    5,3,7, 5,3,7, 5,3,7, 5,3,7,
-    1,1,3, 1,1,3, 1,1,3, 1,1,3,
-    0,0,1, 0,0,1, 0,0,1, 0,0,1,
-    1,0,0, 1,0,0, 1,0,0, 1,0,0,
-    1,1,0, 1,1,0, 1,1,0, 1,1,0,
-    0,1,0, 0,1,0, 0,1,0, 0,1,0
-    ];
+  // top rung front
+   30,   0,  0,
+  100,   0,  0,
+   30,  30,  0,
+   30,  30,  0,
+  100,   0,  0,
+  100,  30,  0,
 
-    var indices = [
-    0,1,2, 0,2,3, 4,5,6, 4,6,7,
-    8,9,10, 8,10,11, 12,13,14, 12,14,15, 
-    16,17,18, 16,18,19, 20,21,22, 20,22,23 
-    ];
+  // middle rung front
+   30,  60,  0,
+   67,  60,  0,
+   30,  90,  0,
+   30,  90,  0,
+   67,  60,  0,
+   67,  90,  0,
 
-    var cubeA = new Object("Cube", vertices, colors, indices);
+  // left column back
+    0,   0,  30,
+   30,   0,  30,
+    0, 150,  30,
+    0, 150,  30,
+   30,   0,  30,
+   30, 150,  30,
 
-    var listOfObjects = [cubeA];
-    webgl.renderObjects(listOfObjects);
+  // top rung back
+   30,   0,  30,
+  100,   0,  30,
+   30,  30,  30,
+   30,  30,  30,
+  100,   0,  30,
+  100,  30,  30,
+
+  // middle rung back
+   30,  60,  30,
+   67,  60,  30,
+   30,  90,  30,
+   30,  90,  30,
+   67,  60,  30,
+   67,  90,  30,
+
+  // top
+    0,   0,   0,
+  100,   0,   0,
+  100,   0,  30,
+    0,   0,   0,
+  100,   0,  30,
+    0,   0,  30,
+
+  // top rung right
+  100,   0,   0,
+  100,  30,   0,
+  100,  30,  30,
+  100,   0,   0,
+  100,  30,  30,
+  100,   0,  30,
+
+  // under top rung
+  30,   30,   0,
+  30,   30,  30,
+  100,  30,  30,
+  30,   30,   0,
+  100,  30,  30,
+  100,  30,   0,
+
+  // between top rung and middle
+  30,   30,   0,
+  30,   30,  30,
+  30,   60,  30,
+  30,   30,   0,
+  30,   60,  30,
+  30,   60,   0,
+
+  // top of middle rung
+  30,   60,   0,
+  30,   60,  30,
+  67,   60,  30,
+  30,   60,   0,
+  67,   60,  30,
+  67,   60,   0,
+
+  // right of middle rung
+  67,   60,   0,
+  67,   60,  30,
+  67,   90,  30,
+  67,   60,   0,
+  67,   90,  30,
+  67,   90,   0,
+
+  // bottom of middle rung.
+  30,   90,   0,
+  30,   90,  30,
+  67,   90,  30,
+  30,   90,   0,
+  67,   90,  30,
+  67,   90,   0,
+
+  // right of bottom
+  30,   90,   0,
+  30,   90,  30,
+  30,  150,  30,
+  30,   90,   0,
+  30,  150,  30,
+  30,  150,   0,
+
+  // bottom
+  0,   150,   0,
+  0,   150,  30,
+  30,  150,  30,
+  0,   150,   0,
+  30,  150,  30,
+  30,  150,   0,
+
+  // left side
+  0,   0,   0,
+  0,   0,  30,
+  0, 150,  30,
+  0,   0,   0,
+  0, 150,  30,
+  0, 150,   0];
+
+    var count = 16 * 6;
+    var color = [Math.random(), Math.random(), Math.random(), 1];
+    var translation = [0, 0, 0];
+    var rotation = [0, 0, 0];
+    var scale = [1, 1, 1];
+
+    var F = new Object("F", position, count, color, translation, rotation, scale);
+
+    webgl.renderObject(F);
 
     var property = document.getElementById("property");
     property.addEventListener('input', (event) => {
 
         // Translation
-        let Tx = event.target.form[0].value / 100;
-        let Ty = event.target.form[1].value / 100;
-        let Tz = event.target.form[2].value / 100;
+        let Tx = event.target.form[0].value;
+        let Ty = event.target.form[1].value;
+        let Tz = event.target.form[2].value;
         console.log(Tx, Ty, Tz);
-        cubeA.translation = [Tx, Ty, Tz];
+        F.translation = [Tx, Ty, Tz];
 
-        webgl.renderObjects([cubeA]);
+        let Rx = event.target.form[3].value;
+        let Ry = event.target.form[4].value;
+        let Rz = event.target.form[5].value;
+        console.log(Rx, Ry, Rz);
+        F.rotation = [Rx, Ry, Rz];
+
+        webgl.renderObject(F);
     })
+
+    //     /** Translation */
+    // global_translation = [45, 150, 0];
+    // global_rotation = [degToRad(40), degToRad(25), degToRad(325)];
+    // global_scale = [1, 1, 1];
+    // global_color = [Math.random(), Math.random(), Math.random(), 1];
+    // count = 16
 }
 
 main();

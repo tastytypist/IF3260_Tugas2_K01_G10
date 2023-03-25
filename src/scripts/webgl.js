@@ -3,104 +3,66 @@ import * as helper from "./helper.js"
 var gl;
 
 // data
-var global_vertices = [];
-var global_indices = [];
-var global_colors = [];
-var global_translation = [];
+var globalPosition = [];
+var globalColor = [];
+var globalTranslation = [];
+var globalRotation = [];
+var globalScale = [];
+var globalCount = 0;
 
 // buffer
-var vertex_buffer;
-var index_buffer;
-var color_buffer;
+var positionBuffer;
 
-// Matrix
-var Pmatrix;
-var Vmatrix;
-var Mmatrix;
+// location
+var positionLocation;
+var colorLocation;
+var matrixLocation;
 
-// 
-var drawnObjects = [];
-
-function setOffset() {
-    let offset = 0;
-    console.log("Calculating offset of " + drawnObjects.length + " objects.");
-    drawnObjects.forEach((object) => {
-        offset += object.vertices.length;
-    })
-    console.log("Calculated offset", offset);
-    return offset;
-}
+// program
+ var shaderProgram;
 
 function defineWebGL(canvas) {
     gl = canvas.getContext('webgl');
     return gl;
 }
 
-function renderObjects(listOfObjects) {
-    listOfObjects.forEach((object) => {
-        createBuffer(object.vertices, object.indices, object.colors, object.translation);
-        createShader();
-        render(object.indices);
-        drawnObjects.push(object);
-    })
+function renderObject(object) {
+    createBuffer(object.position, object.count, object.color, object.translation, object.rotation, object.scale)
+    createShader();
+    drawScene()
 }
 
-function createBuffer(vertices, indices, colors, translation) {
+function createBuffer(position, count, color, translation, rotation, scale) {
     /* Step2: Define the geometry and store it in buffer objects */
 
-    // Create vertex buffer
-    if (!vertex_buffer) {
-        vertex_buffer = gl.createBuffer();
+    // Create position buffer
+    if (!positionBuffer) {
+        positionBuffer = gl.createBuffer();
     }
-    global_vertices = [...global_vertices, ...vertices];
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(global_vertices), gl.STATIC_DRAW);
+    globalPosition = position;
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(globalPosition), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     
-    // Create index buffer
-    if (!index_buffer) {
-        index_buffer = gl.createBuffer();
-    }
-
-    let offset = setOffset() / 3;
-    indices.forEach((i) => {
-        global_indices.push(i+offset)
-    });
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(global_indices), gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-
-    // Create an empty buffer object and store color data
-    if (!color_buffer) {
-        color_buffer = gl.createBuffer();
-    }
-    global_colors = [...global_colors, ...colors];
-    gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(global_colors), gl.STATIC_DRAW);
-
-    global_translation = translation;
-
-    console.log(global_vertices);
-    console.log(global_indices);
-    console.log(global_colors);
+    globalColor = color;
+    globalTranslation = translation;
+    globalRotation = [];
+    rotation.forEach((d) => {
+        globalRotation.push(helper.degToRad(d));
+    })
+    globalScale = scale;
+    globalCount = count;
 }
 
 function createShader() {
     /* Step3: Create and compile Shader programs */
     // Vertex shader source code
     var vertCode =
-    `attribute vec3 position;
-    uniform vec4 translation;
-
-    uniform mat4 Pmatrix;
-    uniform mat4 Vmatrix;
-    uniform mat4 Mmatrix;
-
-    attribute vec3 color;
-    varying vec3 vColor;
+    `attribute vec4 a_position;
+    uniform mat4 u_matrix;
     void main(void) {
-        gl_Position = Pmatrix * Vmatrix * Mmatrix * vec4(position, 1.0) + translation;
-        vColor = color;
+        // Multiply the position by the matrix
+        gl_Position = u_matrix * a_position;
     }`;
 
     //Create, attach, compile a vertex shader object
@@ -111,9 +73,9 @@ function createShader() {
     //Fragment shader source code
     var fragCode = 
     `precision mediump float;
-    varying vec3 vColor;
+    uniform vec4 u_color;
     void main(void) { 
-        gl_FragColor = vec4(vColor, 1.);
+        gl_FragColor = u_color;
     }`;
 
     // Create, attach, compile fragment shader object
@@ -121,8 +83,13 @@ function createShader() {
     gl.shaderSource(fragShader, fragCode);
     gl.compileShader(fragShader);
 
-    // Create a shader program object to store combined shader program
-    var shaderProgram = gl.createProgram();
+    // Check if fragment shader compiled successfully
+    if (!gl.getShaderParameter(fragShader, gl.COMPILE_STATUS)) {
+        console.error('Error compiling fragment shader: ', gl.getShaderInfoLog(fragShader));
+        return;
+    }
+
+    shaderProgram = gl.createProgram();
 
     // Attach a vertex shader and fragment shader
     gl.attachShader(shaderProgram, vertShader); 
@@ -130,90 +97,69 @@ function createShader() {
 
     // Link both programs
     gl.linkProgram(shaderProgram);
+
+    // Check if shader program linked successfully
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        console.error('Error linking shader program: ', gl.getProgramInfoLog(shaderProgram));
+        return;
+    }
     
     /* Step 4: Associate the shader programs to buffer objects */
-    
-    Pmatrix = gl.getUniformLocation(shaderProgram, "Pmatrix");
-    Vmatrix = gl.getUniformLocation(shaderProgram, "Vmatrix");
-    Mmatrix = gl.getUniformLocation(shaderProgram, "Mmatrix");
-    
-    // Position
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-    var position = gl.getAttribLocation(shaderProgram, "position");
-    gl.vertexAttribPointer(position, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(position);
-    
-    // Color
-    gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
-    var color = gl.getAttribLocation(shaderProgram, "color");
-    gl.vertexAttribPointer(color, 3, gl.FLOAT, false, 0, 0) ;
-    gl.enableVertexAttribArray(color);
-    
-    // Use Program
+
+    // Get Location of variable
+    positionLocation = gl.getAttribLocation(shaderProgram, "a_position");
+    colorLocation = gl.getUniformLocation(shaderProgram, 'u_color');
+    matrixLocation = gl.getUniformLocation(shaderProgram, 'u_matrix');
+
+
+}
+
+function drawScene() {
+    helper.resizeCanvasToDisplaySize(gl.canvas);
+
+    // Tell WebGL how to convert from clip space to pixels
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+    // Clear the canvas.
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Tell it to use our program (pair of shaders)
     gl.useProgram(shaderProgram);
 
-    /** Translation */
-    let [Tx, Ty, Tz] = global_translation
-    var translation = gl.getUniformLocation(shaderProgram, "translation")
-    gl.uniform4f(translation, Tx, Ty, Tz, 1.0);
+    // Turn on the attribute
+    gl.enableVertexAttribArray(positionLocation);
+
+    // Bind the position buffer.
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+    // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+    var size = 3;          // 3 components per iteration
+    var type = gl.FLOAT;   // the data is 32bit floats
+    var normalize = false; // don't normalize the data
+    var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+    var offset = 0;        // start at the beginning of the buffer
+    gl.vertexAttribPointer(
+        positionLocation, size, type, normalize, stride, offset);
+
+    // set the color
+    gl.uniform4fv(colorLocation, globalColor);
+
+    // Compute the matrices
+    var matrix = helper.m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400);
+    matrix = helper.m4.translate(matrix, globalTranslation[0], globalTranslation[1], globalTranslation[2]);
+    matrix = helper.m4.xRotate(matrix, globalRotation[0]);
+    matrix = helper.m4.yRotate(matrix, globalRotation[1]);
+    matrix = helper.m4.zRotate(matrix, globalRotation[2]);
+    matrix = helper.m4.scale(matrix, globalScale[0], globalScale[1], globalScale[2]);
+
+    // Set the matrix.
+    gl.uniformMatrix4fv(matrixLocation, false, matrix);
+
+    // Draw the geometry.
+    var primitiveType = gl.TRIANGLES;
+    var offset = 0;
+    // 18 6 triangles in the 'F', 3 points per triangle
+    gl.drawArrays(primitiveType, offset, globalCount);
 }
 
-function render(indices) {
-    var offset = setOffset();
-
-    /** Matrix */
-    var proj_matrix = helper.getProjection(40, canvas.width/canvas.height, 1, 100);
-
-    var mov_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-    var view_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-    
-    view_matrix[14] = view_matrix[14]-6;
-
-    /** Drawing */
-    helper.rotateX(mov_matrix, 0.5);
-    helper.rotateY(mov_matrix, 0.5);
-    helper.rotateZ(mov_matrix, 0.5);
-
-    helper.resizeCanvasToDisplaySize(gl.canvas);
-    gl.enable(gl.DEPTH_TEST);
-    gl.depthFunc(gl.LEQUAL);
-    gl.clearColor(0.5, 0.5, 0.5, 0.9);
-    gl.clearDepth(1.0);
-
-    gl.viewport(0.0, 0.0, canvas.width, canvas.height);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.uniformMatrix4fv(Pmatrix, false, proj_matrix);
-    gl.uniformMatrix4fv(Vmatrix, false, view_matrix);
-    gl.uniformMatrix4fv(Mmatrix, false, mov_matrix);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, offset);
-
-    /** Animation */
-    // var time_old = 0;
-    // helper.resizeCanvasToDisplaySize(gl.canvas);
-    // var animate = function(time) {
-    //     var dt = time-time_old;
-    //     helper.rotateZ(mov_matrix, dt*0.00005);
-    //     helper.rotateY(mov_matrix, dt*0.00002);
-    //     helper.rotateX(mov_matrix, dt*0.00003);
-    //     time_old = time;
-
-    //     gl.enable(gl.DEPTH_TEST);
-    //     gl.depthFunc(gl.LEQUAL);
-    //     gl.clearColor(0.5, 0.5, 0.5, 0.9);
-    //     gl.clearDepth(1.0);
-
-    //     gl.viewport(0.0, 0.0, canvas.width, canvas.height);
-    //     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    //     gl.uniformMatrix4fv(Pmatrix, false, proj_matrix);
-    //     gl.uniformMatrix4fv(Vmatrix, false, view_matrix);
-    //     gl.uniformMatrix4fv(Mmatrix, false, mov_matrix);
-    //     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
-    //     gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
-
-    //     window.requestAnimationFrame(animate);
-    // }
-    // animate(0);
-}
-
-export { defineWebGL, renderObjects };
+export { defineWebGL, renderObject, drawScene};
