@@ -151,7 +151,7 @@ function main() {
   0, 150,  30,
   0, 150,   0];
 
-    var count = 16 * 6;
+    var count = 16 * 6; // Jumlah position/vertex
     var color = [Math.random(), Math.random(), Math.random(), 1];
     var translation = [0, 0, 0];
     var rotation = [0, 0, 0];
