@@ -22,7 +22,7 @@ function main() {
     }
 
     const upload = document.getElementById("import");
-    upload.addEventListener('submit', function() {
+    upload.addEventListener('click', function() {
         let file = document.getElementById('imported-file');
         if (file.files.length === 0) {
             alert('Tidak ada file yang dipilih!')
@@ -35,8 +35,8 @@ function main() {
             reader.onload  = (event) => {
                 data = JSON.parse(event.target.result);
                 position = data.vertices;
-                count = data.vertices.length
-                colour = data.colour
+                count = data.vertices.length;
+                colour = data.colour;
                 if (data.translation) {
                     translation = data.translation;
                 }
