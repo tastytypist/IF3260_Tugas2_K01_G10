@@ -177,6 +177,12 @@ function main() {
         console.log(Rx, Ry, Rz);
         F.rotation = [Rx, Ry, Rz];
 
+        let Sx = event.target.form[6].value/100;
+        let Sy = event.target.form[7].value/100;
+        let Sz = event.target.form[8].value/100;
+        console.log(Sx, Sy, Sz);
+        F.scale = [Sx, Sy, Sz];
+
         webgl.renderObject(F);
     })
 
