@@ -183,7 +183,17 @@ function drawScene() {
          colorLocation, size, type, normalize, stride, offset);
 
     // Compute the matrices
-    var matrix = helper.m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400);
+    
+    // var matrix = helper.m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400);
+
+    var left = 0;
+    var right = gl.canvas.clientWidth;
+    var bottom = gl.canvas.clientHeight;
+    var top = 0;
+    var near = 400;
+    var far = -400;
+    var matrix = helper.m4.orthographic(left, right, bottom, top, near, far);
+
     matrix = helper.m4.translate(matrix, globalTranslation[0], globalTranslation[1], globalTranslation[2]);
     matrix = helper.m4.xRotate(matrix, globalRotation[0]);
     matrix = helper.m4.yRotate(matrix, globalRotation[1]);
