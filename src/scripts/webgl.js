@@ -12,6 +12,7 @@ var globalCount = 0;
 
 // buffer
 var positionBuffer;
+var colorBuffer;
 
 // location
 var positionLocation;
@@ -43,8 +44,16 @@ function createBuffer(position, count, color, translation, rotation, scale) {
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(globalPosition), gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
-    
+
+    // Create color buffer
+    if (!colorBuffer) {
+        colorBuffer = gl.createBuffer();
+    }
     globalColor = color;
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(globalColor), gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    
     globalTranslation = translation;
     globalRotation = [];
     rotation.forEach((d) => {
@@ -59,10 +68,18 @@ function createShader() {
     // Vertex shader source code
     var vertCode =
     `attribute vec4 a_position;
+    attribute vec4 a_color;
+
     uniform mat4 u_matrix;
+
+    varying vec4 v_color;
+
     void main(void) {
         // Multiply the position by the matrix
         gl_Position = u_matrix * a_position;
+
+        // pass the color to the fragment shader.
+        v_color = a_color;
     }`;
 
     //Create, attach, compile a vertex shader object
@@ -73,9 +90,12 @@ function createShader() {
     //Fragment shader source code
     var fragCode = 
     `precision mediump float;
-    uniform vec4 u_color;
+
+    // Passed in from the vertex shader.
+    varying vec4 v_color;
+
     void main(void) { 
-        gl_FragColor = u_color;
+        gl_FragColor = v_color;
     }`;
 
     // Create, attach, compile fragment shader object
@@ -108,9 +128,8 @@ function createShader() {
 
     // Get Location of variable
     positionLocation = gl.getAttribLocation(shaderProgram, "a_position");
-    colorLocation = gl.getUniformLocation(shaderProgram, 'u_color');
     matrixLocation = gl.getUniformLocation(shaderProgram, 'u_matrix');
-
+    colorLocation = gl.getAttribLocation(shaderProgram, "a_color");
 
 }
 
@@ -121,7 +140,14 @@ function drawScene() {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     // Clear the canvas.
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Turn on culling. By default backfacing triangles
+    // will be culled.
+    gl.enable(gl.CULL_FACE);
+
+    // Enable the depth buffer
+    gl.enable(gl.DEPTH_TEST);
 
     // Tell it to use our program (pair of shaders)
     gl.useProgram(shaderProgram);
@@ -141,8 +167,20 @@ function drawScene() {
     gl.vertexAttribPointer(
         positionLocation, size, type, normalize, stride, offset);
 
-    // set the color
-    gl.uniform4fv(colorLocation, globalColor);
+    // Turn on the attribute
+    gl.enableVertexAttribArray(colorLocation);
+
+    // Bind the color buffer.
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+
+     // Tell the attribute how to get data out of colorBuffer (ARRAY_BUFFER)
+     var size = 3;                 // 3 components per iteration
+     var type = gl.UNSIGNED_BYTE;  // the data is 8bit unsigned values
+     var normalize = true;         // normalize the data (convert from 0-255 to 0-1)
+     var stride = 0;               // 0 = move forward size * sizeof(type) each iteration to get the next position
+     var offset = 0;               // start at the beginning of the buffer
+     gl.vertexAttribPointer(
+         colorLocation, size, type, normalize, stride, offset);
 
     // Compute the matrices
     var matrix = helper.m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400);
