@@ -10,10 +10,10 @@
 <body>
     <div class="mainContainer">
         <div class="topNav">
-            <form id="upload">
+            <form onsubmit="return false" id="upload">
                 <label for="input-file">Select a file:</label>
                 <input type="file" id="input-file" name="myFile">
-                <input type="submit">
+                <button type="submit" id="submit">Submit</button>
             </form>
         </div>
         <div class="leftNav">

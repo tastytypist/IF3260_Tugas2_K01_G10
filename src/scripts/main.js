@@ -2,14 +2,15 @@ import * as webgl from "./webgl.js";
 import * as utils from "./utils.js";
 import Object from "../models/Object.js";
 
-function uploadObject() {
-    let fileInput = document.getElementById("fileInput");
-}
-
-function saveObject() {
-    const fs = require('fs');
-
-}
+var position;
+var indices;
+var color;
+var count;
+var translation = [0, 0, -500];
+var rotation = [0, 0, 0];
+var scale = [1, 1, 1];
+var cameraAngle = 0;
+var cameraRadius = 100;
 
 function main() {
     /* Step1: Prepare the canvas and get webgl context */
@@ -20,6 +21,13 @@ function main() {
     if (!gl) {
         return;
     }
+
+    var upload = document.getElementById("upload");
+    upload.addEventListener('submit', (event) => {
+        var inputFile = document.getElementById('input-file');
+        console.log(inputFile.files[0]);
+    })
+
 
    var position = 
    [
@@ -285,11 +293,10 @@ function main() {
     var translation = [0, 0, -500];
     var rotation = [0, 0, 0];
     var scale = [1, 1, 1];
-    var fov = 90;
     var cameraAngle = 0;
     var cameraRadius = 100;
 
-    var F = new Object("F", position, count, color, translation, rotation, scale, fov, cameraAngle, cameraRadius);
+    var F = new Object("F", position, count, color, translation, rotation, scale, cameraAngle, cameraRadius);
 
     webgl.renderObject(F);
 
