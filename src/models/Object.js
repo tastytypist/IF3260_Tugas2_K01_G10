@@ -7,18 +7,6 @@ class Object {
         this.translation = translation;
     }
 
-    setVertices(vertices) {
-        this.vertices = vertices;
-    }
-
-    setColors(colors) {
-        this.colors = colors;
-    }
-
-    setIndices(indices) {
-        this.indices = indices;
-    }
-
     save() {
 
     }

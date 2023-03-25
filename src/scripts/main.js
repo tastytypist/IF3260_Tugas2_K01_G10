@@ -45,10 +45,23 @@ function main() {
     16,17,18, 16,18,19, 20,21,22, 20,22,23 
     ];
 
-    var cubeA = new Object("Cube", vertices, colors, indices)
+    var cubeA = new Object("Cube", vertices, colors, indices);
 
-    var listOfObjects = [cubeA]
+    var listOfObjects = [cubeA];
     webgl.renderObjects(listOfObjects);
+
+    var property = document.getElementById("property");
+    property.addEventListener('input', (event) => {
+
+        // Translation
+        let Tx = event.target.form[0].value / 100;
+        let Ty = event.target.form[1].value / 100;
+        let Tz = event.target.form[2].value / 100;
+        console.log(Tx, Ty, Tz);
+        cubeA.translation = [Tx, Ty, Tz];
+
+        webgl.renderObjects([cubeA]);
+    })
 }
 
 main();
