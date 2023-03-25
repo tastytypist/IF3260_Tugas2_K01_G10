@@ -285,8 +285,10 @@ function main() {
     var translation = [0, 0, -500];
     var rotation = [0, 0, 0];
     var scale = [1, 1, 1];
+    var fov = 90;
+    var cameraAngle = 0
 
-    var F = new Object("F", position, count, color, translation, rotation, scale);
+    var F = new Object("F", position, count, color, translation, rotation, scale, fov, cameraAngle);
 
     webgl.renderObject(F);
 
@@ -297,23 +299,30 @@ function main() {
         let Tx = event.target.form[0].value;
         let Ty = event.target.form[1].value;
         let Tz = event.target.form[2].value;
-        console.log(Tx, Ty, Tz);
         F.translation = [Tx, Ty, Tz];
 
         let Rx = event.target.form[3].value;
         let Ry = event.target.form[4].value;
         let Rz = event.target.form[5].value;
-        console.log(Rx, Ry, Rz);
         F.rotation = [Rx, Ry, Rz];
 
         let Sx = event.target.form[6].value/100;
         let Sy = event.target.form[7].value/100;
         let Sz = event.target.form[8].value/100;
-        console.log(Sx, Sy, Sz);
         F.scale = [Sx, Sy, Sz];
 
         webgl.renderObject(F);
     })
+
+    let perspective = document.getElementById("perspective");
+    perspective.addEventListener('input', (event) => {
+        let ca = event.target.form[0].value;
+        F.cameraAngle = ca;
+        
+        webgl.renderObject(F);
+    })
+
+
 }
 
 main();

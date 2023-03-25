@@ -10,7 +10,7 @@ var globalRotation = [];
 var globalScale = [];
 var globalCount = 0;
 var globalFudgeFactor = 0;
-var globalFOVRadians = helper.degToRad(90);
+var globalFOVRadians = helper.degToRad(0);
 var globalCameraAngleRadians = helper.degToRad(90);
 
 // buffer
@@ -32,12 +32,12 @@ function defineWebGL(canvas) {
 }
 
 function renderObject(object) {
-    createBuffer(object.position, object.count, object.color, object.translation, object.rotation, object.scale)
+    createBuffer(object.position, object.count, object.color, object.translation, object.rotation, object.scale, object.fov, object.cameraAngle)
     createShader();
     drawScene()
 }
 
-function createBuffer(position, count, color, translation, rotation, scale) {
+function createBuffer(position, count, color, translation, rotation, scale, fieldOfView, cameraAngle) {
     /* Step2: Define the geometry and store it in buffer objects */
 
     // Create position buffer
@@ -65,6 +65,8 @@ function createBuffer(position, count, color, translation, rotation, scale) {
     })
     globalScale = scale;
     globalCount = count;
+    globalFOVRadians = helper.degToRad(fieldOfView);
+    globalCameraAngleRadians = helper.degToRad(cameraAngle);
 }
 
 function createShader() {
@@ -215,7 +217,7 @@ function drawScene() {
     var zFar = 2000;
     var projectionMatrix = helper.m4.perspective(globalFOVRadians, aspect, zNear, zFar);
 
-    var radius = 200;
+    var radius = 100;
     
     // Compute a matrix for the camera
     var cameraMatrix = helper.m4.yRotation(globalCameraAngleRadians);
