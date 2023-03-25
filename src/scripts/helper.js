@@ -17,6 +17,14 @@ return needResize;
 }
 
 var m4 = {
+    sheer: function(deg) {
+        return [
+            1, 0, 0, 0,
+            deg, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1,
+        ]
+    },
     perspective: function(fieldOfViewInRadians, aspect, near, far) {
         var f = Math.tan(Math.PI * 0.5 - 0.5 * fieldOfViewInRadians);
         var rangeInv = 1.0 / (near - far);
@@ -27,6 +35,34 @@ var m4 = {
         0, 0, (near + far) * rangeInv, -1,
         0, 0, near * far * rangeInv * 2, 0
         ];
+    },
+    oblique: function(left, right, bottom, top, near, far) {
+        var mat1 = 
+        [
+            2 / (right - left), 0, 0, 0,
+            0, 2 / (top - bottom), 0, 0,
+            0, 0, 2 / (near - far), 0,
+       
+            (left + right) / (left - right),
+            (bottom + top) / (bottom - top),
+            (near + far) / (near - far),
+            1,
+        ];
+
+        const tetha = 75;
+        const phi = 85;
+        const cot_tetha = 1 / Math.tan(degToRad(tetha));
+        const cot_phi = 1 / Math.tan(degToRad(phi));
+
+        var mat2 = 
+        [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            -cot_tetha, -cot_phi, 1, 0,
+            0, 0, 0, 1,
+        ]
+
+        return this.multiply(mat1, mat2);
     },
     orthographic: function(left, right, bottom, top, near, far) {
         return [

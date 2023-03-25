@@ -10,9 +10,9 @@ var globalRotation = [];
 var globalScale = [];
 var globalCount = 0;
 var globalFudgeFactor = 0;
-var globalFOVRadians = helper.degToRad(0);
 var globalCameraAngleRadians = helper.degToRad(90);
 var globalCameraRadius = 100;
+var globalProjection = "orthographic"
 
 // buffer
 var positionBuffer;
@@ -33,12 +33,12 @@ function defineWebGL(canvas) {
 }
 
 function renderObject(object) {
-    createBuffer(object.position, object.count, object.color, object.translation, object.rotation, object.scale, object.fov, object.cameraAngle, object.cameraRadius)
+    createBuffer(object.position, object.count, object.color, object.translation, object.rotation, object.scale, object.cameraAngle, object.cameraRadius, object.projection)
     createShader();
     drawScene()
 }
 
-function createBuffer(position, count, color, translation, rotation, scale, fieldOfView, cameraAngle, cameraRadius) {
+function createBuffer(position, count, color, translation, rotation, scale, cameraAngle, cameraRadius, projection) {
     /* Step2: Define the geometry and store it in buffer objects */
 
     // Create position buffer
@@ -66,37 +66,65 @@ function createBuffer(position, count, color, translation, rotation, scale, fiel
     })
     globalScale = scale;
     globalCount = count;
-    globalFOVRadians = helper.degToRad(fieldOfView);
     globalCameraAngleRadians = helper.degToRad(cameraAngle);
     globalCameraRadius = cameraRadius;
+    globalProjection = projection;
+    globalFudgeFactor = 0;
 }
 
 function createShader() {
     /* Step3: Create and compile Shader programs */
     // Vertex shader source code
-    var vertCode =
-    `attribute vec4 a_position;
-    attribute vec4 a_color;
+    if (globalProjection == "oblique") {
+        var vertCode =
+        `attribute vec4 a_position;
+        attribute vec4 a_color;
 
-    uniform mat4 u_matrix;
-    uniform float u_fudgeFactor;
+        uniform mat4 u_matrix;
+        uniform float u_fudgeFactor;
 
-    varying vec4 v_color;
+        varying vec4 v_color;
 
-    void main(void) {
-        // Multiply the position by the matrix
-        //vec4 position = u_matrix * a_position;
-        gl_Position = u_matrix * a_position;
+        void main(void) {
+            // Multiply the position by the matrix
+            vec4 position = u_matrix * a_position;
+            // gl_Position = u_matrix * a_position;
 
-        // pass the color to the fragment shader.
-        v_color = a_color;
+            // pass the color to the fragment shader.
+            v_color = a_color;
 
-        // Adjust the z to divide by
-        // float zToDivideBy = 1.0 + position.z * u_fudgeFactor;
+            // Adjust the z to divide by
+            float zToDivideBy = 1.0 + position.z * u_fudgeFactor;
 
-        // Divide x and y by z
-        // gl_Position = vec4(position.xyz, zToDivideBy);
-    }`;
+            // Divide x and y by z
+            gl_Position = vec4(position.xyz, zToDivideBy);
+        }`;
+    } else {
+        var vertCode =
+        `attribute vec4 a_position;
+        attribute vec4 a_color;
+
+        uniform mat4 u_matrix;
+        uniform float u_fudgeFactor;
+
+        varying vec4 v_color;
+
+        void main(void) {
+            // Multiply the position by the matrix
+            // vec4 position = u_matrix * a_position;
+            gl_Position = u_matrix * a_position;
+
+            // pass the color to the fragment shader.
+            v_color = a_color;
+
+            // Adjust the z to divide by
+            // float zToDivideBy = 1.0 + position.z * u_fudgeFactor;
+
+            // Divide x and y by z
+            // gl_Position = vec4(position.xyz, zToDivideBy);
+        }`;
+    }
+    
 
     //Create, attach, compile a vertex shader object
     let vertShader = gl.createShader(gl.VERTEX_SHADER);
@@ -202,32 +230,42 @@ function drawScene() {
     // Compute the matrices
     
     // var matrix = helper.m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400);
-
-    // var left = 0;
-    // var right = gl.canvas.clientWidth;
-    // var bottom = gl.canvas.clientHeight;
-    // var top = 0;
-    // var near = 400;
-    // var far = -400;
-    // var matrix = helper.m4.orthographic(left, right, bottom, top, near, far);
-
-    // var matrix = helper.makeZToWMatrix(globalFudgeFactor);
-    // matrix = helper.m4.multiply(matrix, helper.m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400));
-
-    var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-    var zNear = 1;
-    var zFar = 2000;
-    var projectionMatrix = helper.m4.perspective(globalFOVRadians, aspect, zNear, zFar);
+    var viewProjectionMatrix
+    if (globalProjection == "orthographic") {
+        var left = gl.canvas.clientWidth/2*-1;
+        var right = gl.canvas.clientWidth/2;
+        var bottom = gl.canvas.clientHeight/2;
+        var top = gl.canvas.clientHeight/2*-1;
+        var near = 1;
+        var far = 2000;
+        viewProjectionMatrix = helper.m4.orthographic(left, right, bottom, top, near, far);
+    } else if (globalProjection == "oblique") {
+        var left = gl.canvas.clientWidth/2*-1;
+        var right = gl.canvas.clientWidth/2;
+        var bottom = gl.canvas.clientHeight/2;
+        var top = gl.canvas.clientHeight/2*-1;
+        var near = 1;
+        var far = 2000;
+        // globalFudgeFactor = 0;
+        // var fudgeMatrix = helper.makeZToWMatrix(globalFudgeFactor);
+        viewProjectionMatrix = helper.m4.oblique(left, right, bottom, top, near, far);
+    } else if (globalProjection == "perspective") {
+        var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+        var zNear = 1;
+        var zFar = 2000;
+        var projectionMatrix = helper.m4.perspective(helper.degToRad(100), aspect, zNear, zFar);
+        // Compute a matrix for the camera
+        var cameraMatrix = helper.m4.yRotation(globalCameraAngleRadians);
+        cameraMatrix = helper.m4.translate(cameraMatrix, 0, 0, globalCameraRadius * 1.5);
     
-    // Compute a matrix for the camera
-    var cameraMatrix = helper.m4.yRotation(globalCameraAngleRadians);
-    cameraMatrix = helper.m4.translate(cameraMatrix, 0, 0, globalCameraRadius * 1.5);
+        // Make a view matrix from the camera matrix
+        var viewMatrix = helper.m4.inverse(cameraMatrix);
+        viewProjectionMatrix = helper.m4.multiply(projectionMatrix, viewMatrix)
+    }
 
-    // Make a view matrix from the camera matrix
-    var viewMatrix = helper.m4.inverse(cameraMatrix);
+    
 
     // Compute a view projection matrix
-    var viewProjectionMatrix = helper.m4.multiply(projectionMatrix, viewMatrix)
     var matrix = helper.m4.translate(viewProjectionMatrix, globalTranslation[0], globalTranslation[1], globalTranslation[2]);
     matrix = helper.m4.xRotate(matrix, globalRotation[0]);
     matrix = helper.m4.yRotate(matrix, globalRotation[1]);

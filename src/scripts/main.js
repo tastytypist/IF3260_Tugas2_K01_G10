@@ -293,7 +293,7 @@ function main() {
 
     webgl.renderObject(F);
 
-    let property = document.getElementById("property");
+    let property = document.getElementById("property-input");
     property.addEventListener('input', (event) => {
 
         // Translation
@@ -315,13 +315,16 @@ function main() {
         webgl.renderObject(F);
     })
 
-    let perspective = document.getElementById("perspective");
-    perspective.addEventListener('input', (event) => {
+    let projection = document.getElementById("projection-input");
+    projection.addEventListener('input', (event) => {
         let ca = event.target.form[0].value;
         F.cameraAngle = ca;
 
         let r = event.target.form[1].value;
         F.cameraRadius = r;
+
+        let proj = event.target.form[2].value;
+        F.projection = proj;
 
         webgl.renderObject(F);
     })
