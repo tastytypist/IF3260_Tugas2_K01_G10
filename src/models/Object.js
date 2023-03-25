@@ -1,5 +1,5 @@
 class Object {
-    constructor(name, vertices, colors, indices, translation = [0,0,0]) {
+    constructor(name, vertices, colors, indices, translation = [0, 0, 0]) {
         this.name = name;
         this.vertices = vertices;
         this.colors = colors;

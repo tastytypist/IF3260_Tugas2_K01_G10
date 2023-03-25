@@ -3,7 +3,7 @@ import * as utils from "./utils.js";
 import Object from "../models/Object.js";
 
 function uploadObject() {
-    fileInput = document.getElementById("fileInput");
+    let fileInput = document.getElementById("fileInput");
 }
 
 function saveObject() {
@@ -14,14 +14,14 @@ function saveObject() {
 function main() {
     /* Step1: Prepare the canvas and get webgl context */
 
-    var canvas = document.getElementById("canvas");
-    var gl = webgl.defineWebGL(canvas);
+    let canvas = document.getElementById("canvas");
+    let gl = webgl.defineWebGL(canvas);
 
     if (!gl) {
         return;
     }
 
-   var vertices = [
+    let vertices = [
     0,0,0, 0.4,0,0, 0.4, 0.4,0, 0, 0.4,0,
     0,0, 0.4, 0.4,0, 0.4, 0.4, 0.4, 0.4, 0, 0.4, 0.4,
     0,0,0, 0, 0.4,0, 0, 0.4, 0.4, 0,0, 0.4,
@@ -30,7 +30,7 @@ function main() {
     0, 0.4,0, 0, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,0, 
     ];
 
-    var colors = [
+    let colors = [
     5,3,7, 5,3,7, 5,3,7, 5,3,7,
     1,1,3, 1,1,3, 1,1,3, 1,1,3,
     0,0,1, 0,0,1, 0,0,1, 0,0,1,
@@ -39,18 +39,18 @@ function main() {
     0,1,0, 0,1,0, 0,1,0, 0,1,0
     ];
 
-    var indices = [
+    let indices = [
     0,1,2, 0,2,3, 4,5,6, 4,6,7,
     8,9,10, 8,10,11, 12,13,14, 12,14,15, 
     16,17,18, 16,18,19, 20,21,22, 20,22,23 
     ];
 
-    var cubeA = new Object("Cube", vertices, colors, indices);
+    let cubeA = new Object("Cube", vertices, colors, indices);
 
-    var listOfObjects = [cubeA];
+    let listOfObjects = [cubeA];
     webgl.renderObjects(listOfObjects);
 
-    var property = document.getElementById("property");
+    let property = document.getElementById("property");
     property.addEventListener('input', (event) => {
 
         // Translation

@@ -1,25 +1,25 @@
 import * as helper from "./helper.js"
 
-var gl;
+let gl;
 
 // data
-var global_vertices = [];
-var global_indices = [];
-var global_colors = [];
-var global_translation = [];
+let global_vertices = [];
+let global_indices = [];
+let global_colors = [];
+let global_translation = [];
 
 // buffer
-var vertex_buffer;
-var index_buffer;
-var color_buffer;
+let vertex_buffer;
+let index_buffer;
+let color_buffer;
 
 // Matrix
-var Pmatrix;
-var Vmatrix;
-var Mmatrix;
+let Pmatrix;
+let Vmatrix;
+let Mmatrix;
 
-// 
-var drawnObjects = [];
+//
+let drawnObjects = [];
 
 function setOffset() {
     let offset = 0;
@@ -88,7 +88,7 @@ function createBuffer(vertices, indices, colors, translation) {
 function createShader() {
     /* Step3: Create and compile Shader programs */
     // Vertex shader source code
-    var vertCode =
+    let vertCode =
     `attribute vec3 position;
     uniform vec4 translation;
 
@@ -104,12 +104,12 @@ function createShader() {
     }`;
 
     //Create, attach, compile a vertex shader object
-    var vertShader = gl.createShader(gl.VERTEX_SHADER);
+    let vertShader = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vertShader, vertCode);
     gl.compileShader(vertShader);
 
     //Fragment shader source code
-    var fragCode = 
+    let fragCode =
     `precision mediump float;
     varying vec3 vColor;
     void main(void) { 
@@ -117,12 +117,12 @@ function createShader() {
     }`;
 
     // Create, attach, compile fragment shader object
-    var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
+    let fragShader = gl.createShader(gl.FRAGMENT_SHADER);
     gl.shaderSource(fragShader, fragCode);
     gl.compileShader(fragShader);
 
     // Create a shader program object to store combined shader program
-    var shaderProgram = gl.createProgram();
+    let shaderProgram = gl.createProgram();
 
     // Attach a vertex shader and fragment shader
     gl.attachShader(shaderProgram, vertShader); 
@@ -139,33 +139,33 @@ function createShader() {
     
     // Position
     gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
-    var position = gl.getAttribLocation(shaderProgram, "position");
+    let position = gl.getAttribLocation(shaderProgram, "position");
     gl.vertexAttribPointer(position, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(position);
     
     // Color
     gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
-    var color = gl.getAttribLocation(shaderProgram, "color");
+    let color = gl.getAttribLocation(shaderProgram, "color");
     gl.vertexAttribPointer(color, 3, gl.FLOAT, false, 0, 0) ;
     gl.enableVertexAttribArray(color);
-    
+
     // Use Program
     gl.useProgram(shaderProgram);
 
     /** Translation */
     let [Tx, Ty, Tz] = global_translation
-    var translation = gl.getUniformLocation(shaderProgram, "translation")
+    let translation = gl.getUniformLocation(shaderProgram, "translation")
     gl.uniform4f(translation, Tx, Ty, Tz, 1.0);
 }
 
 function render(indices) {
-    var offset = setOffset();
+    let offset = setOffset();
 
     /** Matrix */
-    var proj_matrix = helper.getProjection(40, canvas.width/canvas.height, 1, 100);
+    let proj_matrix = helper.getProjection(40, canvas.width/canvas.height, 1, 100);
 
-    var mov_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-    var view_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+    let mov_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+    let view_matrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
     
     view_matrix[14] = view_matrix[14]-6;
 
