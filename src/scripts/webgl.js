@@ -9,6 +9,8 @@ var globalTranslation = [];
 var globalRotation = [];
 var globalScale = [];
 var globalCount = 0;
+var globalFudgeFactor = 0;
+var globalFOVRadians = 90;
 
 // buffer
 var positionBuffer;
@@ -18,6 +20,7 @@ var colorBuffer;
 var positionLocation;
 var colorLocation;
 var matrixLocation;
+var fudgeLocation;
 
 // program
  var shaderProgram;
@@ -71,15 +74,23 @@ function createShader() {
     attribute vec4 a_color;
 
     uniform mat4 u_matrix;
+    uniform float u_fudgeFactor;
 
     varying vec4 v_color;
 
     void main(void) {
         // Multiply the position by the matrix
+        //vec4 position = u_matrix * a_position;
         gl_Position = u_matrix * a_position;
 
         // pass the color to the fragment shader.
         v_color = a_color;
+
+        // Adjust the z to divide by
+        // float zToDivideBy = 1.0 + position.z * u_fudgeFactor;
+
+        // Divide x and y by z
+        // gl_Position = vec4(position.xyz, zToDivideBy);
     }`;
 
     //Create, attach, compile a vertex shader object
@@ -128,8 +139,9 @@ function createShader() {
 
     // Get Location of variable
     positionLocation = gl.getAttribLocation(shaderProgram, "a_position");
-    matrixLocation = gl.getUniformLocation(shaderProgram, 'u_matrix');
     colorLocation = gl.getAttribLocation(shaderProgram, "a_color");
+    matrixLocation = gl.getUniformLocation(shaderProgram, "u_matrix");
+    fudgeLocation = gl.getUniformLocation(shaderProgram, "u_fudgeFactor");
 
 }
 
@@ -186,13 +198,21 @@ function drawScene() {
     
     // var matrix = helper.m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400);
 
-    var left = 0;
-    var right = gl.canvas.clientWidth;
-    var bottom = gl.canvas.clientHeight;
-    var top = 0;
-    var near = 400;
-    var far = -400;
-    var matrix = helper.m4.orthographic(left, right, bottom, top, near, far);
+    // var left = 0;
+    // var right = gl.canvas.clientWidth;
+    // var bottom = gl.canvas.clientHeight;
+    // var top = 0;
+    // var near = 400;
+    // var far = -400;
+    // var matrix = helper.m4.orthographic(left, right, bottom, top, near, far);
+
+    // var matrix = helper.makeZToWMatrix(globalFudgeFactor);
+    // matrix = helper.m4.multiply(matrix, helper.m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400));
+
+    var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+    var zNear = 1;
+    var zFar = 2000;
+    var matrix = helper.m4.perspective(globalFOVRadians, aspect, zNear, zFar);
 
     matrix = helper.m4.translate(matrix, globalTranslation[0], globalTranslation[1], globalTranslation[2]);
     matrix = helper.m4.xRotate(matrix, globalRotation[0]);
@@ -202,6 +222,9 @@ function drawScene() {
 
     // Set the matrix.
     gl.uniformMatrix4fv(matrixLocation, false, matrix);
+
+    // Set the fudgeFactor
+    gl.uniform1f(fudgeLocation, globalFudgeFactor);
 
     // Draw the geometry.
     var primitiveType = gl.TRIANGLES;
