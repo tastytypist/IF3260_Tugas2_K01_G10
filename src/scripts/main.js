@@ -286,9 +286,10 @@ function main() {
     var rotation = [0, 0, 0];
     var scale = [1, 1, 1];
     var fov = 90;
-    var cameraAngle = 0
+    var cameraAngle = 0;
+    var cameraRadius = 100;
 
-    var F = new Object("F", position, count, color, translation, rotation, scale, fov, cameraAngle);
+    var F = new Object("F", position, count, color, translation, rotation, scale, fov, cameraAngle, cameraRadius);
 
     webgl.renderObject(F);
 
@@ -318,7 +319,10 @@ function main() {
     perspective.addEventListener('input', (event) => {
         let ca = event.target.form[0].value;
         F.cameraAngle = ca;
-        
+
+        let r = event.target.form[1].value;
+        F.cameraRadius = r;
+
         webgl.renderObject(F);
     })
 
