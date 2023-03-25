@@ -282,7 +282,7 @@ function main() {
   160, 160, 220];
 
     var count = 16 * 6; // Jumlah position/vertex
-    var translation = [0, 0, 0];
+    var translation = [0, 0, -500];
     var rotation = [0, 0, 0];
     var scale = [1, 1, 1];
 

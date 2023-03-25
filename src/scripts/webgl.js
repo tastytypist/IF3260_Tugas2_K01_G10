@@ -10,7 +10,8 @@ var globalRotation = [];
 var globalScale = [];
 var globalCount = 0;
 var globalFudgeFactor = 0;
-var globalFOVRadians = 90;
+var globalFOVRadians = helper.degToRad(90);
+var globalCameraAngleRadians = helper.degToRad(90);
 
 // buffer
 var positionBuffer;
@@ -212,9 +213,20 @@ function drawScene() {
     var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     var zNear = 1;
     var zFar = 2000;
-    var matrix = helper.m4.perspective(globalFOVRadians, aspect, zNear, zFar);
+    var projectionMatrix = helper.m4.perspective(globalFOVRadians, aspect, zNear, zFar);
 
-    matrix = helper.m4.translate(matrix, globalTranslation[0], globalTranslation[1], globalTranslation[2]);
+    var radius = 200;
+    
+    // Compute a matrix for the camera
+    var cameraMatrix = helper.m4.yRotation(globalCameraAngleRadians);
+    cameraMatrix = helper.m4.translate(cameraMatrix, 0, 0, radius * 1.5);
+
+    // Make a view matrix from the camera matrix
+    var viewMatrix = helper.m4.inverse(cameraMatrix);
+
+    // Compute a view projection matrix
+    var viewProjectionMatrix = helper.m4.multiply(projectionMatrix, viewMatrix)
+    var matrix = helper.m4.translate(viewProjectionMatrix, globalTranslation[0], globalTranslation[1], globalTranslation[2]);
     matrix = helper.m4.xRotate(matrix, globalRotation[0]);
     matrix = helper.m4.yRotate(matrix, globalRotation[1]);
     matrix = helper.m4.zRotate(matrix, globalRotation[2]);
