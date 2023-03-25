@@ -1,5 +1,4 @@
 import * as webgl from "./webgl.js";
-import * as utils from "./utils.js";
 import Object from "../models/Object.js";
 
 let object;
@@ -38,6 +37,15 @@ function main() {
                 position = data.vertices;
                 count = data.vertices.length
                 colour = data.colour
+                if (data.translation) {
+                    translation = data.translation;
+                }
+                if (data.rotation) {
+                    rotation = data.rotation;
+                }
+                if (data.scale) {
+                    scale = data.scale;
+                }
                 object = new Object("object", position, count, colour, translation, rotation, scale);
                 webgl.renderObject(object);
             }
@@ -337,36 +345,29 @@ function main() {
         let Tx = event.target.form[0].value;
         let Ty = event.target.form[1].value;
         let Tz = event.target.form[2].value;
-        F.translation = [Tx, Ty, Tz];
+        object.translation = [Tx, Ty, Tz];
 
         let Rx = event.target.form[3].value;
         let Ry = event.target.form[4].value;
         let Rz = event.target.form[5].value;
-        F.rotation = [Rx, Ry, Rz];
+        object.rotation = [Rx, Ry, Rz];
 
         let Sx = event.target.form[6].value/100;
         let Sy = event.target.form[7].value/100;
         let Sz = event.target.form[8].value/100;
-        F.scale = [Sx, Sy, Sz];
+        object.scale = [Sx, Sy, Sz];
 
-        webgl.renderObject(F);
+        webgl.renderObject(object);
     })
 
     let projection = document.getElementById("projection-input");
     projection.addEventListener('input', (event) => {
-        let ca = event.target.form[0].value;
-        F.cameraAngle = ca;
+        object.cameraAngle = event.target.form[0].value;
+        object.cameraRadius = event.target.form[1].value;
+        object.projection = event.target.form[2].value;
 
-        let r = event.target.form[1].value;
-        F.cameraRadius = r;
-
-        let proj = event.target.form[2].value;
-        F.projection = proj;
-
-        webgl.renderObject(F);
+        webgl.renderObject(object);
     })
-
-
 }
 
 main();
