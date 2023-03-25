@@ -2,6 +2,7 @@ import * as webgl from "./webgl.js";
 import * as utils from "./utils.js";
 import Object from "../models/Object.js";
 
+let object;
 let position;
 let colour;
 let count;
@@ -21,9 +22,9 @@ function main() {
         return;
     }
 
-    let upload = document.getElementById("upload");
+    const upload = document.getElementById("import");
     upload.addEventListener('submit', function() {
-        let file = document.getElementById('input-file');
+        let file = document.getElementById('imported-file');
         if (file.files.length === 0) {
             alert('Tidak ada file yang dipilih!')
         } else {
@@ -37,9 +38,23 @@ function main() {
                 position = data.vertices;
                 count = data.vertices.length
                 colour = data.colour
-                let object = new Object("object", position, count, colour);
+                object = new Object("object", position, count, colour, translation, rotation, scale);
                 webgl.renderObject(object);
             }
+        }
+    });
+
+    const download = document.getElementById("export");
+    download.addEventListener("click", function() {
+        const fileName = document.getElementById('filename').value;
+        if (fileName.trim() === "") {
+            alert('Enter a file name and make sure the file name does not contain only spaces!')
+        } else {
+            const a = document.createElement("a");
+            const file = new Blob([JSON.stringify(object)], {type : "application/json"});
+            a.href = URL.createObjectURL(file);
+            a.download = fileName.split(' ').join('_') + ".json";
+            a.click();
         }
     });
 
@@ -311,9 +326,9 @@ function main() {
     cameraAngle = 0;
     cameraRadius = 100;
 
-    let F = new Object("F", position, count, color, translation, rotation, scale, cameraAngle, cameraRadius);
+    object = new Object("F", position, count, colour, translation, rotation, scale, cameraAngle, cameraRadius);
 
-    webgl.renderObject(F);
+    webgl.renderObject(object);
 
     let property = document.getElementById("property-input");
     property.addEventListener('input', (event) => {
